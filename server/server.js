@@ -244,7 +244,7 @@ adapter.onTurnError = async (context, error) => {
         const targetReq = leaveRequests[0];
         const cardJson = buildAdaptiveCard(targetReq);
 
-        await fetch(`${serviceUrl}v3/conversations/${conversationId}/activities`, {
+        const directRes = await fetch(`${serviceUrl.replace(/\/$/, '')}/v3/conversations/${conversationId}/activities`, {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${token}`,
@@ -255,7 +255,8 @@ adapter.onTurnError = async (context, error) => {
             attachments: [CardFactory.adaptiveCard(cardJson)]
           })
         });
-        console.log(`[Auto-Delivered] Direct connector message delivered to Teams successfully!`);
+        const resText = await directRes.text();
+        console.log(`[Auto-Delivered] Direct connector status: ${directRes.status}, response: ${resText}`);
         return;
       }
     } catch (e) {
