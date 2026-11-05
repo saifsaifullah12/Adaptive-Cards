@@ -213,13 +213,13 @@ const botFrameworkAuth = new ConfigurationBotFrameworkAuthentication({
 
 const adapter = new CloudAdapter(botFrameworkAuth);
 
-// Helper to fetch direct bot connector token for single-tenant Teams delivery
+// Helper to fetch direct bot connector token
 async function getBotConnectorToken() {
   const appId = process.env.MicrosoftAppId;
   const secret = process.env.MicrosoftAppPassword;
-  const tenantId = process.env.MicrosoftAppTenantId;
 
-  const res = await fetch(`https://login.microsoftonline.com/${tenantId}/oauth2/v2.0/token`, {
+  // Use botframework.com authority for multi-tenant & Web Chat compatibility
+  const res = await fetch(`https://login.microsoftonline.com/botframework.com/oauth2/v2.0/token`, {
     method: 'POST',
     body: new URLSearchParams({
       client_id: appId,
@@ -233,33 +233,36 @@ async function getBotConnectorToken() {
 }
 
 adapter.onTurnError = async (context, error) => {
-  // If Teams SDK sends response with tenant mismatch, deliver directly via Bot Connector REST API
-  if (error.message && error.message.includes('Authorization has been denied')) {
+  // If Teams SDK sends response with 401 Unauthorized or tenant mismatch, deliver directly via Bot Connector REST API
+  const errMsg = error.message || (typeof error === 'object' ? JSON.stringify(error) : String(error));
+  if (errMsg.includes('Authorization has been denied') || errMsg.includes('Unauthorized') || errMsg.includes('401')) {
     try {
       const token = await getBotConnectorToken();
       const serviceUrl = context.activity.serviceUrl;
-      const conversationId = context.activity.conversation.id;
-      const targetReq = leaveRequests[0];
-      const cardJson = buildAdaptiveCard(targetReq);
+      const conversationId = context.activity && context.activity.conversation ? context.activity.conversation.id : null;
+      if (conversationId && serviceUrl) {
+        const targetReq = leaveRequests[0];
+        const cardJson = buildAdaptiveCard(targetReq);
 
-      await fetch(`${serviceUrl}v3/conversations/${conversationId}/activities`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          type: 'message',
-          attachments: [CardFactory.adaptiveCard(cardJson)]
-        })
-      });
-      console.log(`[Auto-Delivered] Direct connector message delivered to Teams successfully!`);
-      return;
+        await fetch(`${serviceUrl}v3/conversations/${conversationId}/activities`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            type: 'message',
+            attachments: [CardFactory.adaptiveCard(cardJson)]
+          })
+        });
+        console.log(`[Auto-Delivered] Direct connector message delivered to Teams successfully!`);
+        return;
+      }
     } catch (e) {
       console.error(`Fallback delivery error:`, e.message);
     }
   }
-  console.error(`[onTurnError] Bot error: ${error.message || error}`);
+  console.error(`[onTurnError] Bot error:`, errMsg);
 };
 
 class TeamsApprovalBot extends TeamsActivityHandler {
