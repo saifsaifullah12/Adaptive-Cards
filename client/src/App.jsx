@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import AdaptiveCardViewer from './AdaptiveCardViewer';
 import './App.css';
 
-const API_BASE = 'http://localhost:5000/api';
+// Auto-detect backend URL: Use env variable if provided, or current Cloudflare tunnel, or fallback to localhost
+const API_BASE = import.meta.env.VITE_API_BASE || 'https://dover-subaru-ant-listings.trycloudflare.com/api';
 
 export default function App() {
   const [requests, setRequests] = useState([]);
