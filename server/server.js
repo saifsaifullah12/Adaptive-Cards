@@ -1,4 +1,5 @@
-require('dotenv').config();
+const path = require('path');
+require('dotenv').config({ path: path.resolve(__dirname, '.env') });
 const express = require('express');
 const cors = require('cors');
 const {
@@ -217,9 +218,10 @@ const adapter = new CloudAdapter(botFrameworkAuth);
 async function getBotConnectorToken() {
   const appId = process.env.MicrosoftAppId;
   const secret = process.env.MicrosoftAppPassword;
+  const tenantId = process.env.MicrosoftAppTenantId || '917890c2-df41-411f-84c1-384442ecc59b';
 
-  // Use botframework.com authority for multi-tenant & Web Chat compatibility
-  const res = await fetch(`https://login.microsoftonline.com/botframework.com/oauth2/v2.0/token`, {
+  // In Azure SingleTenant registration, the token MUST be fetched from the specific tenant endpoint
+  const res = await fetch(`https://login.microsoftonline.com/${tenantId}/oauth2/v2.0/token`, {
     method: 'POST',
     body: new URLSearchParams({
       client_id: appId,
