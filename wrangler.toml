@@ -1,0 +1,9 @@
+# Cloudflare Pages Build & Deploy Configuration
+
+[build]
+command = "npm run build"
+cwd = "client"
+publish = "client/dist"
+
+[build.environment]
+NODE_VERSION = "20"
