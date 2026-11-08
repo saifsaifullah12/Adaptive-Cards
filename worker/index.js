@@ -1,5 +1,5 @@
-// In-memory data store for requests
-let leaveRequests = [
+// Default Seed Data
+const initialRequests = [
   {
     id: "REQ-1001",
     employeeName: "Rahul Kumar",
@@ -40,6 +40,33 @@ let leaveRequests = [
     updatedAt: new Date().toISOString()
   }
 ];
+
+// In-memory fallback
+let memoryRequests = JSON.parse(JSON.stringify(initialRequests));
+
+// Helper to get synced requests from KV or memory
+async function getStoredRequests(env) {
+  if (env && env.LEAVE_REQUESTS) {
+    try {
+      const stored = await env.LEAVE_REQUESTS.get("requests", "json");
+      if (stored && Array.isArray(stored)) {
+        return stored;
+      }
+      await env.LEAVE_REQUESTS.put("requests", JSON.stringify(initialRequests));
+    } catch (e) {}
+  }
+  return memoryRequests;
+}
+
+// Helper to save synced requests to KV and memory
+async function saveStoredRequests(env, data) {
+  memoryRequests = data;
+  if (env && env.LEAVE_REQUESTS) {
+    try {
+      await env.LEAVE_REQUESTS.put("requests", JSON.stringify(data));
+    } catch (e) {}
+  }
+}
 
 function buildAdaptiveCard(reqData) {
   const isApproved = reqData.status === "Approved";
@@ -187,6 +214,8 @@ export default {
       return new Response(null, { headers: corsHeaders });
     }
 
+    const leaveRequests = await getStoredRequests(env);
+
     // 1. GET /api/requests
     if (url.pathname === '/api/requests' && request.method === 'GET') {
       return new Response(JSON.stringify({ success: true, data: leaveRequests }), {
@@ -221,6 +250,8 @@ export default {
         targetReq.approverComment = comment;
         targetReq.updatedAt = new Date().toISOString();
 
+        await saveStoredRequests(env, leaveRequests);
+
         return new Response(JSON.stringify({
           success: true,
           message: `Request ${targetReq.id} marked as ${targetReq.status}`,
@@ -246,7 +277,12 @@ export default {
 
         // Outlook / Teams Message Extension Search Query
         if (activityType === 'invoke' && activityName === 'composeExtension/query') {
-          const attachments = leaveRequests.map(req => ({
+          const queryText = (activity.value && activity.value.parameters && activity.value.parameters[0] && activity.value.parameters[0].value) ? activity.value.parameters[0].value.toLowerCase() : "";
+          const filtered = queryText
+            ? leaveRequests.filter(r => r.employeeName.toLowerCase().includes(queryText) || r.id.toLowerCase().includes(queryText) || r.leaveType.toLowerCase().includes(queryText))
+            : leaveRequests;
+
+          const attachments = (filtered.length ? filtered : leaveRequests).map(req => ({
             contentType: 'application/vnd.microsoft.card.adaptive',
             content: buildAdaptiveCard(req),
             preview: {
@@ -317,6 +353,9 @@ export default {
           targetReq.approverComment = comment;
           targetReq.updatedAt = new Date().toISOString();
 
+          // Persist to Cloudflare KV Database
+          await saveStoredRequests(env, leaveRequests);
+
           return new Response(JSON.stringify({
             statusCode: 200,
             type: 'application/vnd.microsoft.card.adaptive',
@@ -331,7 +370,47 @@ export default {
           const targetReq = leaveRequests[0];
           const cardJson = buildAdaptiveCard(targetReq);
 
-          // Return activity in response
+          const serviceUrl = activity.serviceUrl ? activity.serviceUrl.replace(/\/$/, '') : "";
+          const conversationId = activity.conversation ? activity.conversation.id : "";
+          const appId = env.BOT_ID || "67127d20-25a1-4da1-9778-2d9040e6fcb5";
+          const secret = env.BOT_PASSWORD || "";
+          const tenantId = env.APP_TENANT_ID || "917890c2-df41-411f-84c1-384442ecc59b";
+
+          // Teams push delivery requires Bot Connector REST API call
+          if (serviceUrl && conversationId) {
+            try {
+              const tokenRes = await fetch(`https://login.microsoftonline.com/${tenantId}/oauth2/v2.0/token`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: new URLSearchParams({
+                  client_id: appId,
+                  client_secret: secret,
+                  grant_type: 'client_credentials',
+                  scope: 'https://api.botframework.com/.default'
+                })
+              });
+              const tokenData = await tokenRes.json();
+              if (tokenData.access_token) {
+                await fetch(`${serviceUrl}/v3/conversations/${conversationId}/activities`, {
+                  method: 'POST',
+                  headers: {
+                    'Authorization': `Bearer ${tokenData.access_token}`,
+                    'Content-Type': 'application/json'
+                  },
+                  body: JSON.stringify({
+                    type: 'message',
+                    attachments: [
+                      {
+                        contentType: 'application/vnd.microsoft.card.adaptive',
+                        content: cardJson
+                      }
+                    ]
+                  })
+                });
+              }
+            } catch (postErr) {}
+          }
+
           return new Response(JSON.stringify({
             type: 'message',
             attachments: [
@@ -361,4 +440,3 @@ export default {
     });
   }
 };
-

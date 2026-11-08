@@ -1,14 +1,14 @@
 {
   "$schema": "https://developer.microsoft.com/en-us/json-schemas/teams/v1.16/MicrosoftTeams.schema.json",
   "manifestVersion": "1.16",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "id": "e93f7b21-4d89-4a90-8c9f-35da124e7c19",
   "packageName": "com.platform4x.adaptivecards.v2",
   "developer": {
     "name": "Platform4x",
-    "websiteUrl": "https://platform4x.com",
-    "privacyUrl": "https://platform4x.com/privacy",
-    "termsOfUseUrl": "https://platform4x.com/terms"
+    "websiteUrl": "https://adaptive-cards-client.pages.dev",
+    "privacyUrl": "https://adaptive-cards-client.pages.dev/privacy",
+    "termsOfUseUrl": "https://adaptive-cards-client.pages.dev/terms"
   },
   "icons": {
     "color": "color.png",
@@ -20,7 +20,7 @@
   },
   "description": {
     "short": "Interactive Adaptive Cards for Platform4x leave requests and workflows",
-    "full": "Send, view and approve Platform4x leave workflows, expense claims and actionable notifications directly inside Microsoft Teams using Adaptive Cards."
+    "full": "Send, view and approve Platform4x leave workflows, expense claims and actionable notifications directly inside Microsoft Teams and Outlook."
   },
   "accentColor": "#4F46E5",
   "bots": [
@@ -48,7 +48,8 @@
           "initialRun": true,
           "context": [
             "compose",
-            "commandBox"
+            "commandBox",
+            "message"
           ],
           "parameters": [
             {
@@ -65,9 +66,10 @@
           "type": "link",
           "value": {
             "domains": [
+              "adaptive-cards-api.faaztech-teams.workers.dev",
               "platform4x.com",
               "*.platform4x.com",
-              "adaptive-cards-api.faaztech-teams.workers.dev"
+              "adaptive-cards-client.pages.dev"
             ]
           }
         }
@@ -79,10 +81,9 @@
     "messageTeamMembers"
   ],
   "validDomains": [
+    "adaptive-cards-api.faaztech-teams.workers.dev",
+    "adaptive-cards-client.pages.dev",
     "platform4x.com",
-    "*.platform4x.com",
-    "*.ngrok-free.dev",
-    "*.ngrok.io",
-    "adaptive-cards-api.faaztech-teams.workers.dev"
+    "*.platform4x.com"
   ]
 }

@@ -7,3 +7,7 @@ compatibility_flags = [ "nodejs_compat" ]
 BOT_ID = "67127d20-25a1-4da1-9778-2d9040e6fcb5"
 APP_TENANT_ID = "917890c2-df41-411f-84c1-384442ecc59b"
 TARGET_EMAIL = "S.Saifullah@faaztechsolutions.com"
+
+[[kv_namespaces]]
+binding = "LEAVE_REQUESTS"
+id = "b7f0e9bbe65545e3ab9a2146ae4f2b74"
