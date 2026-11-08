@@ -1,10 +1,9 @@
-# Cloudflare Pages Build & Deploy Configuration
+name = "adaptive-cards-api"
+main = "worker/index.js"
+compatibility_date = "2026-11-04"
+compatibility_flags = [ "nodejs_compat" ]
 
-[build]
-command = "npm run build"
-cwd = "client"
-publish = "client/dist"
-
-[build.environment]
-NODE_VERSION = "20"
-
+[vars]
+BOT_ID = "67127d20-25a1-4da1-9778-2d9040e6fcb5"
+APP_TENANT_ID = "917890c2-df41-411f-84c1-384442ecc59b"
+TARGET_EMAIL = "S.Saifullah@faaztechsolutions.com"

@@ -2,8 +2,8 @@ import React, { useState, useEffect } from 'react';
 import AdaptiveCardViewer from './AdaptiveCardViewer';
 import './App.css';
 
-// Auto-detect backend URL: Use env variable if provided, or current Cloudflare tunnel, or fallback to localhost
-const API_BASE = import.meta.env.VITE_API_BASE || 'https://dover-subaru-ant-listings.trycloudflare.com/api';
+// 100% Cloudflare Workers Permanent Serverless API
+const API_BASE = 'https://adaptive-cards-api.faaztech-teams.workers.dev/api';
 
 export default function App() {
   const [requests, setRequests] = useState([]);

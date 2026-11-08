@@ -67,7 +67,7 @@
             "domains": [
               "platform4x.com",
               "*.platform4x.com",
-              "dover-subaru-ant-listings.trycloudflare.com"
+              "adaptive-cards-api.faaztech-teams.workers.dev"
             ]
           }
         }
@@ -83,6 +83,6 @@
     "*.platform4x.com",
     "*.ngrok-free.dev",
     "*.ngrok.io",
-    "dover-subaru-ant-listings.trycloudflare.com"
+    "adaptive-cards-api.faaztech-teams.workers.dev"
   ]
 }
